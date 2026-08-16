@@ -2,8 +2,9 @@ from transformers import AutoModelForSequenceClassification, AutoTokenizer
 import torch
 import sys
 import numpy as np
-import shutil
-import os
+import warnings
+from urllib3.exceptions import NotOpenSSLWarning
+warnings.filterwarnings("ignore", category=NotOpenSSLWarning)
 
 from transformers import logging
 logging.set_verbosity_error()
@@ -11,7 +12,7 @@ logging.set_verbosity_error()
 tokenizer = AutoTokenizer.from_pretrained("prajjwal1/bert-tiny")
 model = AutoModelForSequenceClassification.from_pretrained("prajjwal1/bert-tiny")
 trained = torch.load('../notebooks/SST-2-BERT-tiny.bin', map_location=torch.device('cpu'))
-model.load_state_dict(trained, strict=True)
+model.load_state_dict(trained, strict=False)
 model.eval()
 
 text = sys.argv[1]
@@ -19,6 +20,8 @@ text = "[CLS] " + text + " [SEP]"
 
 tokenized = tokenizer(text)
 tokenized_text = tokenizer.tokenize(text)
+for i in range(len(tokenized_text)):
+    print(tokenized_text[i])
 indexed_tokens = tokenizer.convert_tokens_to_ids(tokenized_text)
 tokens_tensor = torch.tensor([indexed_tokens])
 
