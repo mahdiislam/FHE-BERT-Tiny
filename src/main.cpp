@@ -18,7 +18,6 @@ Ctxt encoder2(vector<Ctxt> input);
 Ctxt pooler(Ctxt input);
 Ctxt classifier(Ctxt input);
 
-//Set to True to test the program on the IDE
 bool IDE_MODE = false;
 
 string input_folder;
@@ -46,12 +45,13 @@ int main(int argc, char *argv[]) {
         controller.load_bootstrapping_and_rotation_keys("rotation_keys.txt", 16384, false);
     }
 
-    system("mkdir -p ../checkpoint");
+    // system("mkdir -p ../checkpoint");
 
     if (verbose) cout << "\nSERVER-SIDE\nThe evaluation of the circuit started." << endl;
 
     auto start = high_resolution_clock::now();
 
+    cout << "input folder " << input_folder << endl;
     if (input_folder.empty()) {
         cerr << "The input folder \"" << input_folder << "\" is empty!";
         exit(1);
@@ -61,14 +61,9 @@ int main(int argc, char *argv[]) {
     Ctxt encoder2output;
 
     encoder1output = encoder1();
-    encoder1output = controller.load_vector("../checkpoint/encoder1output.bin");
-
     encoder2output = encoder2(encoder1output);
-    encoder2output = controller.load_ciphertext("../checkpoint/encoder2output.bin");
 
     Ctxt pooled = pooler(encoder2output);
-    pooled = controller.load_ciphertext("../checkpoint/pooled.bin");
-
     Ctxt classified = classifier(pooled);
 
     if (verbose) cout << "The circuit has been evaluated, the results are sent back to the client" << endl << endl;
@@ -149,8 +144,6 @@ Ctxt pooler(Ctxt input) {
     if (verbose) cout << "The evaluation of Pooler took: " << (duration_cast<milliseconds>( high_resolution_clock::now() - start)).count() / 1000.0 << " seconds." << endl;
     if (verbose) controller.print(output, 128, "Pooler (Repeated)");
 
-    controller.save(output, "../checkpoint/pooled.bin");
-
     return output;
 }
 Ctxt encoder2(vector<Ctxt> inputs) {
@@ -199,7 +192,7 @@ Ctxt encoder2(vector<Ctxt> inputs) {
 
     if (verbose) cout << "The evaluation of Self-Attention took: " << (duration_cast<milliseconds>( high_resolution_clock::now() - start)).count() / 1000.0 << " seconds." << endl;
     if (verbose) controller.print(output[0], 128, "Self-Attention (Repeated)");
-    //Qua la precisione è 0.9868
+    // Here the precision is 0.9868
 
     /*
      * I remove all the ciphertexts except the first corresponding to the CLS token
@@ -211,7 +204,7 @@ Ctxt encoder2(vector<Ctxt> inputs) {
     start = high_resolution_clock::now();
 
     Ptxt dense_w = controller.read_plain_input("../weights-sst2/layer1_selfoutput_weight.txt", output[0]->GetLevel());
-    Ptxt dense_b = controller.read_plain_expanded_input("../weights-sst2/layer1_selfoutput_bias.txt", output[0]->GetLevel() + 1); //Bias fai solo 12 ripetiz
+    Ptxt dense_b = controller.read_plain_expanded_input("../weights-sst2/layer1_selfoutput_bias.txt", output[0]->GetLevel() + 1); // Bias only do 12 reps
 
     output = controller.matmulCR(output, dense_w, dense_b);
 
@@ -231,13 +224,13 @@ Ctxt encoder2(vector<Ctxt> inputs) {
     Ptxt bias = controller.read_plain_expanded_input("../weights-sst2/layer1_selfoutput_normbias.txt", wrappedOutput->GetLevel(), 1, inputs.size());
     wrappedOutput = controller.add(wrappedOutput, bias);
 
-    Ctxt output_copy = wrappedOutput->Clone(); //Required at the last layernorm
+    Ctxt output_copy = wrappedOutput->Clone(); // Required at the last layernorm
 
     output = controller.unwrapExpanded(wrappedOutput, inputs.size());
 
     if (verbose) cout << "The evaluation of Self-Output took: " << (duration_cast<milliseconds>( high_resolution_clock::now() - start)).count() / 1000.0 << " seconds." << endl;
     if (verbose) controller.print_expanded(output[0], 0, 128, "Self-Output (Expanded)");
-    //Fino a qui ottengo precisione 0.9828
+    // Up to this point I get 0.9828 precision
 
 
     start = high_resolution_clock::now();
@@ -292,8 +285,6 @@ Ctxt encoder2(vector<Ctxt> inputs) {
     if (verbose) cout << "The evaluation of Output took: " << (duration_cast<milliseconds>( high_resolution_clock::now() - start)).count() / 1000.0 << " seconds." << endl;
     if (verbose) controller.print_expanded(output[0], 0, 128, "Output (Expanded)");
 
-    controller.save(output[0], "../checkpoint/encoder2output.bin");
-
     return output[0];
 }
 vector<Ctxt> encoder1() {
@@ -345,12 +336,12 @@ vector<Ctxt> encoder1() {
 
     if (verbose) cout << "The evaluation of Self-Attention took: " << (duration_cast<milliseconds>( high_resolution_clock::now() - start)).count() / 1000.0 << " seconds." << endl;
     if (verbose) controller.print(output[0], 128, "Self-Attention (Repeated)");
-    //Fino a qui ottengo precisione 0.9934
+    // Up to this point I get precision 0.9934
 
     start = high_resolution_clock::now();
 
     Ptxt dense_w = controller.read_plain_input("../weights-sst2/layer0_selfoutput_weight.txt", output[0]->GetLevel());
-    Ptxt dense_b = controller.read_plain_expanded_input("../weights-sst2/layer0_selfoutput_bias.txt", output[0]->GetLevel() + 1); //Bias fai solo 12 ripetiz
+    Ptxt dense_b = controller.read_plain_expanded_input("../weights-sst2/layer0_selfoutput_bias.txt", output[0]->GetLevel() + 1); // Bias only do 12 reps
 
     output = controller.matmulCR(output, dense_w, dense_b);
 
@@ -370,13 +361,13 @@ vector<Ctxt> encoder1() {
 
     wrappedOutput = controller.bootstrap(wrappedOutput);
 
-    Ctxt output_copy = wrappedOutput->Clone(); //Required at the last layernorm
+    Ctxt output_copy = wrappedOutput->Clone(); // Required at the last layernorm
 
     output = controller.unwrapExpanded(wrappedOutput, inputs.size());
 
     if (verbose) cout << "The evaluation of Self-Output took: " << (duration_cast<milliseconds>( high_resolution_clock::now() - start)).count() / 1000.0 << " seconds." << endl;
     if (verbose) controller.print_expanded(output[0], 0, 128, "Self-Output (Expanded)");
-    //Fino a qui ottengo precisione 0.9964
+    // Up to this point I get 0.9964 precision
 
     start = high_resolution_clock::now();
 
@@ -404,7 +395,7 @@ vector<Ctxt> encoder1() {
 
     if (verbose) cout << "The evaluation of Intermediate took: " << (duration_cast<milliseconds>( high_resolution_clock::now() - start)).count() / 1000.0 << " seconds." << endl;
     if (verbose) controller.print(unwrappedLargeOutput[0][0], 128, "Intermediate (Containers)");
-    //Fino a qui ottengo precisione 0.9957
+    // Up to this point I get 0.9957 precision
 
     Ptxt output_w_1 = controller.read_plain_input("../weights-sst2/layer0_output_weight1.txt", unwrappedLargeOutput[0][0]->GetLevel());
     Ptxt output_w_2 = controller.read_plain_input("../weights-sst2/layer0_output_weight2.txt", unwrappedLargeOutput[0][0]->GetLevel());
@@ -430,9 +421,7 @@ vector<Ctxt> encoder1() {
 
     if (verbose) cout << "The evaluation of Output took: " << (duration_cast<milliseconds>( high_resolution_clock::now() - start)).count() / 1000.0 << " seconds." << endl;
     if (verbose) controller.print_expanded(output[0], 0, 128,"Output (Expanded)");
-    //Fino a qui ottengo precisione 0.9965
-
-    controller.save(output, "../checkpoint/encoder1output.bin");
+    // Up to this point I get 0.9965 precision
 
     return output;
 }
@@ -472,7 +461,7 @@ void setup_environment(int argc, char *argv[]) {
 
         text = argv[1];
 
-        //Removing any previous embedding
+        // Removing any previous embedding
         filesystem::remove_all("../src/tmp_embeddings/");
         system("mkdir ../src/tmp_embeddings");
 

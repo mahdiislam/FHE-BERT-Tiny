@@ -136,3 +136,28 @@ Made with <3  at [Bicocca Security Lab](https://www.bislab.unimib.it), at Univer
 ### Declaration
 
 This is a proof of concept and, even though parameters are created with $\lambda \geq 128$ security bits (according to [Homomorphic Encryption Standards](https://homomorphicencryption.org/standard)), this circuit is intended for educational purposes only.
+```
+mahdi@metzumwork ~/Downloads/GitHub/FHE-BERT-Tiny/build$ ./FHE-BERT-Tiny "Good movie" --verbose
+CLIENT-SIDE
+Tokenizing the following sentence: 'Good movie'
+config.json: 100%|██████████████████████████████████████████████████████████| 285/285 [00:00<00:00, 347kB/s]
+vocab.txt: 232kB [00:00, 6.09MB/s]
+pytorch_model.bin: 100%|███████████████████████████████████████████████| 17.8M/17.8M [00:02<00:00, 6.78MB/s]
+[CLS]
+good
+movie
+[SEP]
+model.safetensors: 100%|███████████████████████████████████████████████| 17.7M/17.7M [00:01<00:00, 9.68MB/s]
+I cannot read serialized data from: ../keys/crypto-context.txt
+
+mahdi@metzumwork ~/Downloads/GitHub/FHE-BERT-Tiny/build$ ./FHE-BERT-Tiny --generate_keys
+Ciphertexts depth: 26, available multiplications: 10
+Context built, generating keys...
+Generated.
+Now serializing keys ...
+Relinearization Keys have been serialized
+Crypto Context have been serialized
+Public Key has been serialized
+Secret Key has been serialized
+Rotation keys "rotation_keys.txt" have been serialized
+```

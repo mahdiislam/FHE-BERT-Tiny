@@ -412,10 +412,12 @@ vector<double> FHEController::decrypt_tovector(const Ctxt &c, int slots) {
  * Homomorphic operations
  */
 Ctxt FHEController::add(const Ctxt &c1, const Ctxt &c2) {
+    cout << "Calling EvalAdd ciphertexts" << endl;
     return context->EvalAdd(c1, c2);
 }
 
 Ctxt FHEController::add(const Ctxt &c1, const Ptxt &c2) {
+    cout << "Calling EvalAdd cipher and plain" << endl;
     return context->EvalAdd(c1, c2);
 }
 
@@ -429,10 +431,12 @@ Ctxt FHEController::mult(const Ctxt &c1, double d) {
 }
 
 Ctxt FHEController::mult(const Ctxt &c, const Ptxt& p) {
+    cout << "Calling EvalMult cipher and plain" << endl;
     return context->EvalMult(c, p);
 }
 
 Ctxt FHEController::mult(const Ctxt &c1, const Ctxt& c2) {
+    cout << "Calling EvalMult ciphertext" << endl;
     return context->EvalMult(c1, c2);
 }
 
@@ -830,7 +834,9 @@ void FHEController::print_min_max(const Ctxt &c) {
 Ctxt FHEController::rotsum(const Ctxt &in, int slots, int padding) {
     Ctxt result = in->Clone();
 
+    cout << "Slots " << slots << endl;
     for (int i = 0; i < log2(slots); i++) {
+        cout << "Rotate Sum " << i << endl;
         result = add(result, context->EvalRotate(result, padding * pow(2, i)));
     }
 
@@ -870,6 +876,7 @@ Ctxt FHEController::repeat(const Ctxt &in, int slots, int padding) {
 vector<Ctxt> FHEController::matmulRE(vector<Ctxt> rows, const Ptxt &weight, const Ptxt &bias) {
     vector<Ctxt> columns;
 
+    cout << "MatMulRE " << rows.size() << endl;
     for (int i = 0; i < rows.size(); i++) {
         Ctxt m = mult(rows[i], weight);
 
@@ -947,6 +954,7 @@ vector<Ctxt> FHEController::matmulRElarge(vector<Ctxt>& inputs, const vector<Ptx
 vector<Ctxt> FHEController::matmulCR(vector<Ctxt> rows, const Ctxt& matrix) {
     vector<Ctxt> columns;
 
+    cout << "MatMulCR " << rows.size() << endl;
     for (int i = 0; i < rows.size(); i++) {
         Ctxt m = mult(rows[i], matrix);
 
@@ -1024,6 +1032,7 @@ Ctxt FHEController::matmulScores(vector<Ctxt> queries, const Ctxt &key) {
 
 Ctxt FHEController::wrapUpRepeated(vector<Ctxt> vectors) {
     vector<Ctxt> masked;
+    cout << "Size of vectors " << vectors.size() << endl;
 
     for (int i = 0; i < vectors.size(); i++) {
         masked.push_back(mask_block(vectors[i], 128 * i, 128 * (i + 1), 1));
@@ -1240,6 +1249,7 @@ Ctxt FHEController::eval_exp(const Ctxt &c, int inputs_number) {
     //Coefficients of Taylor series
     Ctxt res = context->EvalPoly(c, {1, 1, 1/(2.0), 1/(6.0), 1/(24.0), 1/(120.0), 1/(720.0)});
 
+    cout << "Current level " << res->GetLevel() << endl;
     if (res->GetLevel() + 4 > circuit_depth) {
         res = bootstrap(res);
     }
