@@ -877,7 +877,7 @@ vector<Ctxt> FHEController::matmulRE(vector<Ctxt> rows, const Ptxt &weight, cons
     vector<Ctxt> columns;
 
     cout << "MatMulRE " << rows.size() << endl;
-    for (int i = 0; i < rows.size(); i++) {
+    for (size_t i = 0; i < rows.size(); i++) {
         Ctxt m = mult(rows[i], weight);
 
         m = rotsum(m, 128, 128);
@@ -893,7 +893,7 @@ vector<Ctxt> FHEController::matmulRE(vector<Ctxt> rows, const Ptxt &weight, cons
 vector<Ctxt> FHEController::matmulRE(vector<Ctxt> rows, const Ptxt &weight, const Ptxt &bias, int row_size, int padding) {
     vector<Ctxt> columns;
 
-    for (int i = 0; i < rows.size(); i++) {
+    for (size_t i = 0; i < rows.size(); i++) {
         Ctxt m = mult(rows[i], weight);
 
         m = rotsum(m, row_size, padding);
@@ -909,7 +909,7 @@ vector<Ctxt> FHEController::matmulRE(vector<Ctxt> rows, const Ptxt &weight, cons
 vector<Ctxt> FHEController::matmulRE(vector<Ctxt> rows, const Ctxt &weight, int row_size, int padding) {
     vector<Ctxt> columns;
 
-    for (int i = 0; i < rows.size(); i++) {
+    for (size_t i = 0; i < rows.size(); i++) {
         Ctxt m = mult(rows[i], weight);
 
         m = rotsum(m, row_size, padding);
@@ -923,7 +923,7 @@ vector<Ctxt> FHEController::matmulRE(vector<Ctxt> rows, const Ctxt &weight, int 
 vector<Ctxt> FHEController::matmulRElarge(vector<Ctxt>& inputs, const vector<Ptxt> &weights, const Ptxt &bias, double mask_val) {
     vector<Ctxt> densed;
 
-    for (int i = 0; i < inputs.size(); i++) {
+    for (size_t i = 0; i < inputs.size(); i++) {
         Ctxt i_th_result;
         for (int j = weights.size() - 1; j >= 0; j--) {
             Ctxt out = mult(inputs[i], weights[j]);
@@ -931,7 +931,7 @@ vector<Ctxt> FHEController::matmulRElarge(vector<Ctxt>& inputs, const vector<Ptx
 
             out = mask_first_n(out, 128, mask_val);
 
-            if (j == weights.size() - 1)
+            if (j == static_cast<int>(weights.size()) - 1)
                 i_th_result = out;
             else {
                 //i_th_result = rotate(i_th_result, -128);
@@ -955,7 +955,7 @@ vector<Ctxt> FHEController::matmulCR(vector<Ctxt> rows, const Ctxt& matrix) {
     vector<Ctxt> columns;
 
     cout << "MatMulCR " << rows.size() << endl;
-    for (int i = 0; i < rows.size(); i++) {
+    for (size_t i = 0; i < rows.size(); i++) {
         Ctxt m = mult(rows[i], matrix);
 
         m = rotsum(m, 64, 1);
@@ -969,7 +969,7 @@ vector<Ctxt> FHEController::matmulCR(vector<Ctxt> rows, const Ctxt& matrix) {
 vector<Ctxt> FHEController::matmulCR(vector<Ctxt> rows, const Ptxt& weight, const Ptxt& bias) {
     vector<Ctxt> columns;
 
-    for (int i = 0; i < rows.size(); i++) {
+    for (size_t i = 0; i < rows.size(); i++) {
         Ctxt m = mult(rows[i], weight);
 
         m = rotsum(m, 128, 1);
@@ -985,7 +985,7 @@ vector<Ctxt> FHEController::matmulCR(vector<Ctxt> rows, const Ptxt& weight, cons
 vector<Ctxt> FHEController::matmulCRlarge(vector<vector<Ctxt>> rows, vector<Ptxt> weights, const Ptxt &bias) {
     vector<Ctxt> output;
 
-    for (int i = 0; i < rows.size(); i++) {
+    for (size_t i = 0; i < rows.size(); i++) {
         //Qua sotto posso fare prima add-many e poi un solo rotsum mi sa:)
         /*
         Ctxt p1 = rotsum(mult(rows[i][0], weights[0]), 128, 1);
@@ -1034,7 +1034,7 @@ Ctxt FHEController::wrapUpRepeated(vector<Ctxt> vectors) {
     vector<Ctxt> masked;
     cout << "Size of vectors " << vectors.size() << endl;
 
-    for (int i = 0; i < vectors.size(); i++) {
+    for (size_t i = 0; i < vectors.size(); i++) {
         masked.push_back(mask_block(vectors[i], 128 * i, 128 * (i + 1), 1));
     }
 
@@ -1086,7 +1086,7 @@ vector<vector<Ctxt>> FHEController::unwrapRepeatedLarge(vector<Ctxt> containers,
         quantities.push_back(quantity);
     }
 
-    for (int i = 0; i < containers.size(); i++) {
+    for (size_t i = 0; i < containers.size(); i++) {
         for (int j = 0; j < quantities[i]; j++) {
             vector<Ctxt> unwrapped_container = unwrap_512_in_4_128(containers[i], j);
             unwrapped_output.push_back(unwrapped_container);
@@ -1144,8 +1144,8 @@ vector<Ctxt> FHEController::generate_containers(vector<Ctxt> inputs, const Ptxt&
 
     for (int i = 0; i < inputs.size() / 32.0; i++) {
         int quantity = 32;
-        if ((i + 1) * 32 > inputs.size()) {
-            quantity = inputs.size() - (i * 32);
+        if ((i + 1) * 32 > static_cast<int>(inputs.size())) {
+            quantity = static_cast<int>(inputs.size()) - (i * 32);
         }
 
         quantities.push_back(quantity);
@@ -1250,7 +1250,7 @@ Ctxt FHEController::eval_exp(const Ctxt &c, int inputs_number) {
     Ctxt res = context->EvalPoly(c, {1, 1, 1/(2.0), 1/(6.0), 1/(24.0), 1/(120.0), 1/(720.0)});
 
     cout << "Current level " << res->GetLevel() << endl;
-    if (res->GetLevel() + 4 > circuit_depth) {
+    if (static_cast<int>(res->GetLevel()) + 4 > circuit_depth) {
         res = bootstrap(res);
     }
 
@@ -1296,11 +1296,11 @@ Ctxt FHEController::eval_tanh_function(const Ctxt &c, double min, double max, do
 }
 
 vector<Ctxt> FHEController::slicing(vector<Ctxt> &arr, int X, int Y) {
-    if (Y - X >= arr.size())
+    if (Y - X >= static_cast<int>(arr.size()))
         return arr;
 
-    if (Y > arr.size()) {
-        Y = arr.size();
+    if (Y > static_cast<int>(arr.size())) {
+        Y = static_cast<int>(arr.size());
     }
 
     // Starting and Ending iterators

@@ -1,6 +1,7 @@
 #include <iostream>
 #include "FHEController.h"
 #include <chrono>
+#include <filesystem>
 
 #define GREEN_TEXT "\033[1;32m"
 #define RED_TEXT "\033[1;31m"
@@ -10,6 +11,12 @@ using namespace std::chrono;
 enum class Parameters { Generate, Load };
 
 void setup_environment(int argc, char *argv[]);
+
+void run_command(const string &command) {
+    if (system(command.c_str()) != 0) {
+        cerr << "Warning: command failed: " << command << endl;
+    }
+}
 
 FHEController controller;
 
@@ -35,7 +42,7 @@ int main(int argc, char *argv[]) {
     setup_environment(argc, argv);
 
     if (p == Parameters::Generate) {
-        system("mkdir -p ../keys");
+        run_command("mkdir -p ../keys");
         controller.generate_context(true, security128bits);
         vector<int> rotations = {1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, -1, -2, -4, -8, -16, -32, -64};
         controller.generate_bootstrapping_and_rotation_keys(rotations, 16384, true, "rotation_keys.txt");
@@ -84,9 +91,9 @@ int main(int argc, char *argv[]) {
         } else {
             cout << "positive sentiment!" << endl;
         }
-        system(("python3 ../src/python/PlainCircuit.py \"" + text + "\"").c_str());
-        system(("python3 ../src/python/Precision.py \"" + text + "\" " + "\"[" + to_string(plain_result[0]) + ", " +
-                to_string(plain_result[1]) + "\" " + to_string(timing)).c_str());
+        run_command("python3 ../src/python/PlainCircuit.py \"" + text + "\"");
+        run_command("python3 ../src/python/Precision.py \"" + text + "\" " + "\"[" + to_string(plain_result[0]) + ", " +
+                to_string(plain_result[1]) + "\" " + to_string(timing));
     } else {
         cout << "Outcome: ";
         if (plain_result[0] > plain_result[1]){
@@ -208,7 +215,7 @@ Ctxt encoder2(vector<Ctxt> inputs) {
 
     output = controller.matmulCR(output, dense_w, dense_b);
 
-    for (int i = 0; i < output.size(); i++) {
+    for (size_t i = 0; i < output.size(); i++) {
         output[i] = controller.add(output[i], inputs[i]);
     }
 
@@ -250,7 +257,7 @@ Ctxt encoder2(vector<Ctxt> inputs) {
 
     output = controller.generate_containers(output, nullptr);
 
-    for (int i = 0; i < output.size(); i++) {
+    for (size_t i = 0; i < output.size(); i++) {
         output[i] = controller.eval_gelu_function(output[i], -1, 1, GELU_max_abs_value, 59);
         output[i] = controller.bootstrap(output[i]);
     }
@@ -345,7 +352,7 @@ vector<Ctxt> encoder1() {
 
     output = controller.matmulCR(output, dense_w, dense_b);
 
-    for (int i = 0; i < output.size(); i++) {
+    for (size_t i = 0; i < output.size(); i++) {
         output[i] = controller.add(output[i], inputs[i]);
     }
 
@@ -386,7 +393,7 @@ vector<Ctxt> encoder1() {
 
     output = controller.generate_containers(output, nullptr);
 
-    for (int i = 0; i < output.size(); i++) {
+    for (size_t i = 0; i < output.size(); i++) {
         output[i] = controller.eval_gelu_function(output[i], -1, 1, GELU_max_abs_value, 119);
         output[i] = controller.bootstrap(output[i]);
     }
@@ -431,7 +438,7 @@ void setup_environment(int argc, char *argv[]) {
 
     if (IDE_MODE) {
         filesystem::remove_all("../src/tmp_embeddings");
-        system("mkdir ../src/tmp_embeddings");
+        run_command("mkdir ../src/tmp_embeddings");
 
         input_folder = "../src/tmp_embeddings/";
 
@@ -439,7 +446,7 @@ void setup_environment(int argc, char *argv[]) {
         cout << "\nCLIENT-SIDE\nTokenizing the following sentence: '" << text << "'" << endl;
         command = "python3 ../src/python/ExtractEmbeddings.py \"" + text + "\"";
 
-        system(command.c_str());
+        run_command(command);
 
         verbose = true;
         return;
@@ -463,7 +470,7 @@ void setup_environment(int argc, char *argv[]) {
 
         // Removing any previous embedding
         filesystem::remove_all("../src/tmp_embeddings/");
-        system("mkdir ../src/tmp_embeddings");
+        run_command("mkdir ../src/tmp_embeddings");
 
         input_folder = "../src/tmp_embeddings/";
 
@@ -480,7 +487,7 @@ void setup_environment(int argc, char *argv[]) {
 
         if (verbose) cout << "\nCLIENT-SIDE\nTokenizing the following sentence: '" << text << "'" << endl;
         command = "python3 ../src/python/ExtractEmbeddings.py \"" + text + "\"";
-        system(command.c_str());
+        run_command(command);
     }
 
 }
