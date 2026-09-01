@@ -65,9 +65,8 @@ class PrecomputedLayerNorm(nn.Module):
         return (x - m) * v * self.weight + self.bias
 
 
-
-def load_model() -> tuple[Any, Any]:
-    tokenizer = AutoTokenizer.from_pretrained("prajjwal1/bert-tiny")
+def load_model():
+    tokenizer = AutoTokenizer.from_pretrained("prajjwal1/bert-tiny", cache_dir="./")
     model = AutoModelForSequenceClassification.from_pretrained("prajjwal1/bert-tiny")
     # torch.load deserializes an object saved with torch.save; map_location forces CPU tensors.
     trained: Mapping[str, torch.Tensor] = torch.load(
